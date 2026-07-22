@@ -32,10 +32,11 @@
 
     <div class="abstract">
         <div class="abstract-title">Abstract</div>
-        Search engine traffic degrades over time as content becomes stale and competitors publish newer information. This research models the probability of organic traffic decay using 79 million rows of production search data from the FlyRank ML Internship dataset. By extracting trailing performance and staleness features, we trained a Random Forest classifier that achieved a Precision@50 of 0.78 on a strict client-grouped split, significantly outperforming hand-written rules. The resulting model serves as a decision-support triage queue, surfacing the most critical "refresh opportunities" for human editorial review.
+        Search engine traffic degrades over time as content becomes stale and competitors publish newer information. For enterprise SEO portfolios—like those managed by FlyRank's clients—maintaining legacy content quickly becomes unmanageable without a predictive triage system. This research models the probability of organic traffic decay using 79 million rows of production search data from the FlyRank ML Internship dataset. By extracting trailing performance and staleness features, we trained a Random Forest classifier that achieved a Precision@50 of 0.78 on a strict client-grouped split, significantly outperforming hand-written rules. The resulting model serves as a decision-support triage queue, surfacing the most critical "refresh opportunities" for human editorial review to protect high-value traffic before it decays.
     </div>
 
     <h2>1. Introduction & Problem Statement</h2>
+    <p><strong>The FlyRank Content Problem:</strong> Managing SEO at scale inevitably leads to content sprawl. FlyRank clients often possess tens of thousands of indexed pages, making it impossible for editorial teams to manually monitor which historical articles are losing their competitive edge. Without intervention, staleness leads to catastrophic traffic loss.</p>
     <p><strong>Research Question:</strong> Can we predict which high-visibility pages are most likely to suffer organic traffic decay by observing their staleness and search performance?</p>
     <p><strong>Decision Supported:</strong> This model supports SEO editors by prioritizing a vast portfolio of content, flagging exactly which URLs require manual review and content refreshes first to protect existing traffic.</p>
 
