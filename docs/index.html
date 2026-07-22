@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlyRank Capstone: Predicting SEO Traffic Decay</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        h1, h2, h3 { color: #111; }
+        h1 { border-bottom: 2px solid #eaeaea; padding-bottom: 0.5rem; }
+        .abstract { background: #f8f9fa; padding: 1.5rem; border-left: 4px solid #4C72B0; margin-bottom: 2rem; }
+        .abstract-title { font-weight: bold; margin-bottom: 0.5rem; }
+        img { max-width: 100%; height: auto; display: block; margin: 1.5rem 0; border: 1px solid #ddd; border-radius: 4px; }
+        table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; }
+        .footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #eaeaea; font-size: 0.9em; color: #666; }
+        a { color: #0366d6; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <h1>FlyRank Capstone: Predicting SEO Traffic Decay</h1>
+
+    <div class="abstract">
+        <div class="abstract-title">Abstract</div>
+        Search engine traffic degrades over time as content becomes stale and competitors publish newer information. This research models the probability of organic traffic decay using 79 million rows of production search data from the FlyRank ML Internship dataset. By extracting trailing performance and staleness features, we trained a Random Forest classifier that achieved a Precision@50 of 0.78 on a strict client-grouped split, significantly outperforming hand-written rules. The resulting model serves as a decision-support triage queue, surfacing the most critical "refresh opportunities" for human editorial review.
+    </div>
+
+    <h2>1. Introduction & Problem Statement</h2>
+    <p><strong>Research Question:</strong> Can we predict which high-visibility pages are most likely to suffer organic traffic decay by observing their staleness and search performance?</p>
+    <p><strong>Decision Supported:</strong> This model supports SEO editors by prioritizing a vast portfolio of content, flagging exactly which URLs require manual review and content refreshes first to protect existing traffic.</p>
+
+    <h2>2. Data</h2>
+    <ul>
+        <li><strong>Source:</strong> Built on the FlyRank ML Internship dataset (79 million rows of production search data).</li>
+        <li><strong>Tables Used:</strong> <code>fact_content_daily_performance</code> (for trailing 30-day impressions, clicks, position) and <code>dim_content</code> (for content age and days since last update).</li>
+        <li><strong>Date Windows:</strong> Trailing 30 days used for feature generation; subsequent 30 days used to evaluate the decline label.</li>
+        <li><strong>Exclusions:</strong> Pre-GA4 zero-filled tracking gaps (<code>ga4_data_available=FALSE</code>) were excluded to prevent falsely zeroed engagement data. All client identifiers and raw URLs were safely scrambled/hashed to protect privacy.</li>
+    </ul>
+
+    <h2>3. Methodology</h2>
+    <ul>
+        <li><strong>Label Definition:</strong> Traffic decline (<code>trend_direction == 'down'</code>), strictly defined by the target window performance.</li>
+        <li><strong>Features:</strong> Prior 30-day aggregates (<code>impressions_90d</code>, <code>ctr</code>, <code>avg_position</code>) and content metadata (<code>days_since_last_update</code>, <code>word_count</code>). No target-derived features were used.</li>
+        <li><strong>Validation Design:</strong> To prevent the model from memorizing client-specific baseline traffic, we used a <strong>Grouped Split</strong> (<code>GroupShuffleSplit</code> grouped by <code>client_id</code>). This ensures true out-of-sample skill measurement.</li>
+        <li><strong>Baseline:</strong> A deterministic, hand-written rule scoring visibility, freshness risk, and position opportunity.</li>
+        <li><strong>Model:</strong> Random Forest Classifier (max depth 6).</li>
+    </ul>
+
+    <h2>4. Results (Model vs Baseline)</h2>
+    <p>The Random Forest model outperformed the deterministic baseline on the completely unseen test client group.</p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Base Rate</th>
+                <th>Hand-Written Baseline</th>
+                <th>Random Forest</th>
+                <th>Model Lift</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Precision @ 20</strong></td>
+                <td>0.450</td>
+                <td>0.600</td>
+                <td><strong>0.850</strong></td>
+                <td>+0.250</td>
+            </tr>
+            <tr>
+                <td><strong>Precision @ 50</strong></td>
+                <td>0.450</td>
+                <td>0.560</td>
+                <td><strong>0.780</strong></td>
+                <td>+0.220</td>
+            </tr>
+        </tbody>
+    </table>
+    <p><em>Observation:</em> By capturing non-linear interactions between CTR and position, the model significantly improved prioritization over simple rules.</p>
+
+    <img src="../work/figures/capstone_feature_importance.png" alt="Feature Importance Chart showing days_since_last_update and impressions as top drivers" onerror="this.style.display='none'">
+
+    <h2>5. Limitations & Honest Framing</h2>
+    <p><strong>What this work cannot claim:</strong></p>
+    <ul>
+        <li><strong>No Causal Proof:</strong> This model identifies where staleness is <em>associated with</em> decay. It does not prove that updating a timestamp will cause rankings to recover.</li>
+        <li><strong>Intent Blindness:</strong> The model cannot read text semantics. It flags highly stale, high-impression pages, but cannot tell if a page is an evergreen definition (e.g., historical facts) that rarely needs updates.</li>
+        <li><strong>SERP Layout Changes:</strong> Declining CTR may be caused by Google adding a "Featured Snippet" above the organic results, not by poor content quality. The model does not see SERP features.</li>
+    </ul>
+
+    <h2>6. Ranked Recommendations (Playbook)</h2>
+    <p><strong>Content Action Playbook Output:</strong></p>
+    <ol>
+        <li><strong><code>refresh</code></strong>: Update content for pages flagged as <code>stale_visible_page</code>.</li>
+        <li><strong><code>expand_and_refresh</code></strong>: Add depth to pages flagged as <code>thin_visible_page</code>.</li>
+        <li><strong><code>refresh_and_review_ctr</code></strong>: Improve Title/Meta tags for <code>low_ctr_visible_page</code> archetypes.</li>
+        <li><strong><code>monitor</code></strong>: Safe pages requiring no immediate action.</li>
+    </ol>
+    <p><em>Important:</em> All flagged URLs must undergo human review. No automated rewrites or deletions should occur based solely on this score.</p>
+
+    <h2>7. Reproducibility</h2>
+    <p>This entire capstone analysis pipeline is available, reproducible, and documented. <br>
+    Visit the <a href="https://github.com/ak8x6/flyrank-seo-ml-pipeline/tree/main/work/notebooks">Notebooks Repository</a> to view the raw execution receipts and source code.</p>
+
+    <div class="footer">
+        <h2>Acknowledgments & Data Credit</h2>
+        <p>Built on the FlyRank ML Internship dataset. We thank the team at <a href="https://flyrank.ai" target="_blank" rel="noopener noreferrer">FlyRank AI</a> for providing the 79 million rows of anonymized, production search data that made this research possible.</p>
+    </div>
+
+</body>
+</html>
